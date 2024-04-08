@@ -18,20 +18,20 @@ def gen_frames():
     
     # Load background video
     cap_video = cv2.VideoCapture("green.mp4")
-    # Webcam feed
-    cap_webcam = cv2.VideoCapture(0)
+    # Mobile camera feed
+    cap_mobile = cv2.VideoCapture(0)  # Use 0 for default camera
     
     # Check if video captures are opened successfully
-    if not cap_video.isOpened() or not cap_webcam.isOpened():
+    if not cap_video.isOpened() or not cap_mobile.isOpened():
         print("Error opening video capture(s)")
         return
     
     while True:
         ret_video, frame_video = cap_video.read()
-        ret_webcam, frame_webcam = cap_webcam.read()
+        ret_mobile, frame_mobile = cap_mobile.read()
         
         # Check if frames are read successfully
-        if not ret_video or not ret_webcam:
+        if not ret_video or not ret_mobile:
             print("Error reading frames")
             break
         
@@ -43,13 +43,13 @@ def gen_frames():
         inv_mask = cv2.bitwise_not(mask)
         # Apply mask to video frame to extract foreground
         foreground = cv2.bitwise_and(frame_video, frame_video, mask=inv_mask)
-        # Resize mask to webcam frame size
-        mask = cv2.resize(mask, (frame_webcam.shape[1], frame_webcam.shape[0]))
-        # Apply mask to webcam frame to extract background
-        background = cv2.bitwise_and(frame_webcam, frame_webcam, mask=mask)
-        # Resize foreground and background to webcam frame size
-        foreground = cv2.resize(foreground, (frame_webcam.shape[1], frame_webcam.shape[0]))
-        background = cv2.resize(background, (frame_webcam.shape[1], frame_webcam.shape[0]))
+        # Resize mask to mobile camera frame size
+        mask = cv2.resize(mask, (frame_mobile.shape[1], frame_mobile.shape[0]))
+        # Apply mask to mobile camera frame to extract background
+        background = cv2.bitwise_and(frame_mobile, frame_mobile, mask=mask)
+        # Resize foreground and background to mobile camera frame size
+        foreground = cv2.resize(foreground, (frame_mobile.shape[1], frame_mobile.shape[0]))
+        background = cv2.resize(background, (frame_mobile.shape[1], frame_mobile.shape[0]))
         # Combine foreground and background
         final_frame = cv2.add(foreground, background)
         
@@ -61,7 +61,7 @@ def gen_frames():
 
     # Release video captures
     cap_video.release()
-    cap_webcam.release()
+    cap_mobile.release()
 
 # Route for video feed
 @app.route('/video_feed')
