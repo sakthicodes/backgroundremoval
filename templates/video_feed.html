@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Feed</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('serve_css') }}">
+</head>
+<body>
+    <h1>Video Feed</h1>
+    <img src="{{ url_for('video_feed') }}" width="640" height="550">
+    <br>
+    <button onclick="goBack()">Back</button>
+    
+    <script>
+        function goBack() {
+            window.history.back(); // Navigate back to the previous page
+        }
+    </script>
+</body>
+</html>
