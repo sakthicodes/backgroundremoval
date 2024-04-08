@@ -1,48 +1,45 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera Feed</title>
+    <title>Green Screen Replacement</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px; /* Reduced margin */
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            margin-left: 10px; /* Add margin to button */
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        a {
+            text-decoration: none;
+        }
+    </style>
 </head>
 <body>
-    <video id="video" width="640" height="480" autoplay></video>
-    <canvas id="canvas" style="display:none;"></canvas>
-    <script>
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function(stream) {
-                var video = document.getElementById('video');
-                video.srcObject = stream;
-            })
-            .catch(function(err) {
-                console.log('Error: ' + err);
-            });
-
-        var canvas = document.getElementById('canvas');
-        var context = canvas.getContext('2d');
-        var video = document.getElementById('video');
-
-        video.addEventListener('play', function() {
-            var $this = this;
-            (function loop() {
-                if (!$this.paused && !$this.ended) {
-                    context.drawImage($this, 0, 0, canvas.width, canvas.height);
-                    var dataURL = canvas.toDataURL('image/jpeg');
-                    fetch('/video_feed', {
-                        method: 'POST',
-                        body: JSON.stringify({ image: dataURL }),
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => console.log(data))
-                    .catch(error => console.error('Error:', error));
-                }
-                setTimeout(loop, 1000 / 30); // Drawing at 30fps
-            })();
-        });
-    </script>
+    <h1>Green Screen Replacement</h1>
+    <a href="{{ url_for('video_feed') }}"><button>Start Stream</button></a>
 </body>
 </html>
