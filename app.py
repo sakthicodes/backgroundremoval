@@ -1,52 +1,73 @@
 # Importing necessary libraries
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, Response
 import cv2
 import numpy as np
-import base64
-import io
 
 # Creating Flask app
 app = Flask(__name__)
-
-# Load background video
-background_video = cv2.VideoCapture("green.mp4")
 
 # Route for the homepage
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Route for receiving video feed
-@app.route('/video_feed', methods=['POST'])
+# Function to generate video frames
+def gen_frames():
+    lower_green = np.array([35, 100, 100])  # Lower bounds (BGR)
+    upper_green = np.array([77, 255, 255])  # Upper bounds (BGR)
+    
+    # Load background video
+    cap_video = cv2.VideoCapture("green.mp4")
+    # Mobile camera feed
+    cap_mobile = cv2.VideoCapture(0)  # Use 0 for default camera
+    
+    # Check if video captures are opened successfully
+    if not cap_video.isOpened() or not cap_mobile.isOpened():
+        print("Error opening video capture(s)")
+        return
+    
+    while True:
+        ret_video, frame_video = cap_video.read()
+        ret_mobile, frame_mobile = cap_mobile.read()
+        
+        # Check if frames are read successfully
+        if not ret_video or not ret_mobile:
+            print("Error reading frames")
+            break
+        
+        # Convert video frame to HSV
+        hsv_video = cv2.cvtColor(frame_video, cv2.COLOR_BGR2HSV)
+        # Create mask for green screen
+        mask = cv2.inRange(hsv_video, lower_green, upper_green)
+        # Invert mask
+        inv_mask = cv2.bitwise_not(mask)
+        # Apply mask to video frame to extract foreground
+        foreground = cv2.bitwise_and(frame_video, frame_video, mask=inv_mask)
+        # Resize mask to mobile camera frame size
+        mask = cv2.resize(mask, (frame_mobile.shape[1], frame_mobile.shape[0]))
+        # Apply mask to mobile camera frame to extract background
+        background = cv2.bitwise_and(frame_mobile, frame_mobile, mask=mask)
+        # Resize foreground and background to mobile camera frame size
+        foreground = cv2.resize(foreground, (frame_mobile.shape[1], frame_mobile.shape[0]))
+        background = cv2.resize(background, (frame_mobile.shape[1], frame_mobile.shape[0]))
+        # Combine foreground and background
+        final_frame = cv2.add(foreground, background)
+        
+        # Encode final frame to JPEG format
+        ret, buffer = cv2.imencode('.jpg', final_frame)
+        frame = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+    # Release video captures
+    cap_video.release()
+    cap_mobile.release()
+
+# Route for video feed
+@app.route('/video_feed')
 def video_feed():
-    data = request.json
-    if 'image' in data:
-        # Decode base64 image
-        img_data = base64.b64decode(data['image'].split(',')[1])
-        nparr = np.frombuffer(img_data, np.uint8)
-        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
-        # Read next frame from background video
-        ret, background_frame = background_video.read()
-        if not ret:
-            background_video.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Reset video to start if it ends
-        
-        # Resize background frame to match client's camera frame size
-        background_frame = cv2.resize(background_frame, (frame.shape[1], frame.shape[0]))
-        
-        # Apply green screen effect (replace green pixels with background frame)
-        hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv_frame, (35, 100, 100), (77, 255, 255))  # Green color range
-        result_frame = cv2.bitwise_and(frame, frame, mask=cv2.bitwise_not(mask))  # Remove green pixels
-        result_frame += cv2.bitwise_and(background_frame, background_frame, mask=mask)  # Add background
-        
-        # Encode processed frame to send back to client
-        retval, buffer = cv2.imencode('.jpg', result_frame)
-        img_str = base64.b64encode(buffer).decode('utf-8')
-        return jsonify(image=img_str)
-    else:
-        return jsonify(error='No image data received.')
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 # Running the Flask app
 if __name__ == '__main__':
-    app.run(debug=True, threaded=True, host='0.0.0.0', port=5000, **options)
+    app.run(debug=True)
