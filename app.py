@@ -19,7 +19,7 @@ def gen_frames():
     # Load background video
     cap_video = cv2.VideoCapture("green.mp4")
     # Webcam feed
-    cap_webcam = cv2.VideoCapture(1)
+    cap_webcam = cv2.VideoCapture(2)
     
     # Check if video captures are opened successfully
     if not cap_video.isOpened() or not cap_webcam.isOpened():
