@@ -18,8 +18,8 @@ def gen_frames():
     
     # Load background video
     cap_video = cv2.VideoCapture("green.mp4")
-    # Mobile camera feed
-    cap_webcam = cv2.VideoCapture("http://100.73.146.189:4747/video")
+    # Webcam feed
+    cap_webcam = cv2.VideoCapture(0)
     
     # Check if video captures are opened successfully
     if not cap_video.isOpened() or not cap_webcam.isOpened():
